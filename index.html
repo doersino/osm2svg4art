@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>osm2svg4art</title>
+    <meta name="viewport" content="width=880">  <!-- same as page width defined in css-->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #eee;
+            font-family: system-ui, sans-serif;
+            color: #222;
+            line-height: 1.33;
+            margin: 1.5em 0;
+
+            /* don't randomly enlage some bits of text on mobile */
+            text-size-adjust: none;
+            -webkit-text-size-adjust: none;
+            -moz-text-size-adjust: none;
+            -ms-text-size-adjust: none;
+        }
+        main {
+            width: 880px;
+            padding: 0 40px;
+            margin: auto;
+        }
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 1em;
+        }
+        h1 a {
+            color: #999;
+            float: right;
+            text-decoration: none;
+            font-weight: normal;
+        }
+        p {
+            margin: 1em 0;
+        }
+        kbd {
+            font: inherit;
+            font-size: 0.8em;
+            background-color: lightgrey;
+            box-shadow: 0 0.1em 0.05em #bbb;
+            padding: 0.2em 0.2em 0 0.2em;
+            border-radius: 0.2em;
+        }
+        #panic {
+            color: white;
+            background-color: #dd3300;
+            padding: 1em;
+            border-radius: 0.33em;
+            position: absolute;
+            width: 700px;
+            margin-left: 50px;
+            margin-top: 2em;
+            box-shadow: 0 0.5em 2em #00000088;
+            z-index: 99999;
+            display: none;
+        }
+        #panic-dismiss {
+            float: right;
+            font-size: 1.5em;
+            background: white;
+            color: #dd3300;
+            width: 1em;
+            height: 1em;
+            text-align: center;
+            line-height: 0.85;
+            border-radius: 99em;
+            cursor: pointer;
+        }
+        #panic-details {
+            margin: 1em 0;
+            border-left: 0.33em solid darkred;
+            padding-left: 0.67em;
+            font-family: monospace;
+        }
+        input {
+            -webkit-appearance: none;
+            border: 0;
+            padding: 0.5em 1em;
+            font: inherit;
+            color: inherit;
+            display: block;
+            margin: 2em auto 2.33em;
+            border-radius: 99em;
+            width: 600px;
+            outline: 0 solid #6699ff;
+            outline-offset: 0;
+            /*outline-offset: -0.2em;*/
+            transition: 0.2s;
+        }
+        input:focus, input:hover,
+        input.success, input.success:focus,
+        input.error, input.error:focus {
+            outline-width: 0.2em;
+        }
+        input.success, input.success:focus {
+            outline-color: #44aa33;
+        }
+        input.error, input.error:focus {
+            outline-color: #ff6633;
+        }
+        #map, #out {
+            width: 800px;
+            height: 500px;
+            margin-bottom: 1em;
+            border-radius: 0.5em;
+            overflow: hidden;
+        }
+        #out {
+            position: absolute;
+            pointer-events: none;
+            z-index: 9999;
+        }
+        #out svg {
+            background-color: #ffffff88;
+            backdrop-filter: grayscale(67%) blur(0.5px);
+        }
+        .buttons {
+            display: grid;
+            grid-auto-flow: column;
+            grid-column-gap: 0.75em;
+        }
+        button {
+            -webkit-appearance: none;
+            border: 0;
+            padding: 1em;
+            font: inherit;
+            color: inherit;
+            background-color: white;
+            border-radius: 0.5em;
+            outline: 0.2em solid white;
+            outline-offset: -0.2em;
+            transition: 0.2s;
+        }
+        button:hover {
+            background-color: #eee;
+            box-shadow: 0 0.2em 0.2em #ddd;
+            cursor: pointer;
+        }
+        button.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+        button.loading {
+            pointer-events: none;
+            animation: background-pulse 1s infinite;
+        }
+        @keyframes background-pulse {
+            0% {
+                background-color: #eee;
+            }
+            50% {
+                background-color: #ddd;
+            }
+            100% {
+                background-color: #eee;
+            }
+        }
+        aside {
+            margin-top: 1rem;
+            font-size: 0.67em;
+            font-family: monospace;
+        }
+        #legend {
+            margin-top: 1em;
+            columns: 5;
+        }
+        #legend span {
+            display: block;
+        }
+        #legend s {
+            display: inline-block;
+            width: 1em;
+            height: 0.33em;
+            vertical-align: middle;
+            background-color: grey;
+        }
+        footer {
+            margin-top: 7em;
+            font-size: 0.67em;
+            color: #999;
+        }
+        footer ol {
+            margin-left: 1.4em;
+            list-style-type: lower-greek;
+        }
+        footer li {
+            margin-bottom: 0.33em;
+        }
+        footer li.highlit {
+            color: #559966;
+        }
+        footer li:not(.highlit) {
+            transition: 3s;
+        }
+        footer a {
+            color: inherit;
+        }
+        a[href^="#fn"] {
+            color: #888;
+            font-size: 0.67em;
+            vertical-align: top;
+            padding-left: 0.1em;
+            text-decoration: none;
+        }
+    </style>
+</head>
+<body>
+    <main>
+        <h1>osm2svg4art ∕ #ptpx2024 <a href="https://noahdoersing.com/" target="_blank">noahdoersing.com ↗</a></h1>
+        <div id="panic"><div id="panic-dismiss">×</div><div id="panic-message"></div><div id="panic-details"></div><em>Try again. Or maybe the page's just gone wonky and you need to reload. (You can first copy the <code>bbox</code> displayed below the buttons and, after reloading, enter it into the search field to restore state.)</em></div>
+        <p>Retrieves roads and paths from <a href="https://www.openstreetmap.org/">OpenStreetMap</a> (<em>i.e.</em>, all ways with <code>highway=*</code><a href="#fn1">&alpha;</a>) via the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API">Overpass API</a>, then <a href="http://mourner.github.io/simplify-js/">simplifies</a> them ahead of conversion to an artsy color-coded SVG representation for plotting on an <a href="https://axidraw.com">AxiDraw</a>. Different colors end up on separate <a href="https://wiki.inkscape.org/wiki/DocumentLayers">Inkscape-style layers</a> in preparation for drawing with the <a href="https://wiki.evilmadscientist.com/Axidraw_Software_Installation">AxiDraw Inkscape extension</a>. <em>Originally built<a href="#fn2">&beta;</a> for <a href="https://mastodon.social/tags/ptpx2024">#ptpx2024</a>, a pen plotter postcard exchange.</em></p>
+        <p><strong>Instructions:</strong> ① Enter an address<a href="#fn3">&gamma;</a> or some coordinates, ② press <kbd title="enter">↵</kbd> to search, ③ zoom and pan to adjust<a href="#fn4">&delta;</a> the displayed area, then ④ operate the hopefully-self-explanatory buttons below (left to right if in doubt).</p>
+        <form id="form">
+            <input id="address" placeholder="address, or: latitude, longitude">
+        </form>
+        <section id="out"></section>
+        <section id="map"></section>
+        <section class="buttons">
+            <button id="getdata">Get OSM Data</button>
+            <button id="randcolors" class="disabled">Shuffle Colors</button>
+            <button id="getsvg" class="disabled">Download SVG</button>
+            <button id="togglesvg" class="disabled">Toggle SVG</button>
+        </section>
+        <aside>
+            bbox [<span id="bbox">?</span>]
+            ·
+            <span id="numways">?</span> ways
+            ·
+            <span id="querytime">?</span> ms (query)
+            ·
+            <span id="svgtime">?</span> ms (drawing)
+            <div id="legend"><span><s style="background-color: grey"></s> highway=yes</span></div>
+        </aside>
+        <footer>
+            <ol>
+                <li id="fn1">Meaning that notably, this tool excludes railways and waterways. Those are left as an exercise to the reader – the code's <a href="TODO">open source</a>. Or maybe I'll add some toggles or mode switches at a later date.</li>
+                <li id="fn2">"Hand-coded" in pure HTML, CSS, and JavaScript – with no preprocessor or framework of any kind. I love that that kind of lo-fi approach is still possible (and, quite frankly, thanks to JavaScript gaining a number of convenience features, more viable than ever!) in 2024.</li>
+                <li id="fn3"><em>Privacy notice:</em> Geocoding is performed through <a href="https://nominatim.openstreetmap.org/ui/search.html">OSM Nominatim</a> which is subject to the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>.<br>And while I'm at it, full disclosure (so you won't sue me on GDPR grounds – but rest assured that I'm way too asocial to <em>want</em> any of your personal info plus too lazy to try and <em>get</em> any of it): This site is hosted on <a href="https://pages.github.com">GitHub Pages</a> (here's <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's Privacy Policy</a>) and displays a map composed of <a href="https://tile.openstreetmap.de/">OSM Tiles</a> (see the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>) using <a href="https://leafletjs.com">Leaflet.js</a> loaded from <a href="https://www.unpkg.com">UNPKG</a> (which doesn't seem to have a privacy policy...?).</li>
+                <li id="fn4">Make sure the area doesn't contain more than a few thousand roads – things might get a bit sluggish when loading/rendering significantly more data.</li>
+            </ol>
+        </footer>
+    </main>
+    <script type="module">
+        //const colors = ["red", "green", "yellow", "blue", "orange", "purple", "grey", "pink", "brown", "lime"];
+        //const colors = ["#9e0142", "#d53e4f", "#f46d43", "#fdae61", "#fee08b", "#e6f598", "#abdda4", "#66c2a5", "#3288bd", "#5e4fa2"];  // via https://loading.io/color/feature/Spectral-10/
+        //const colors = ["#fd7f6f", "#7eb0d5", "#b2e061", "#bd7ebe", "#ffb55a", "#ffee65", "#beb9db", "#fdcce5", "#8bd3c7"];  // spring pastels, via https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
+        const colors = ["#e60049", "#0bb4ff", "#50e991", "#e6d800", "#9b19f5", "#ffa300", "#dc0ab4", "#b3d4ff", "#00bfa0"];  // dutch field, via https://www.heavy.ai/blog/12-color-palettes-for-telling-better-stories-with-your-data
+
+        // load map
+        const osmUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+        const osmAttrib = "&copy; <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a>";
+        const map = L.map("map", {zoomSnap: 0.2});  // enable fractional zoom, see https://leafletjs.com/examples/zoom-levels/
+        L.tileLayer(osmUrl, {maxZoom: 19, attribution: osmAttrib}).addTo(map);
+        L.control.scale().addTo(map);
+
+        // set initial view (tübingen franz-viertel, lotsa different kinds of paths there)
+        map.setView([48.512, 9.080], 15);
+
+        // "name" some elements
+        const form = document.getElementById("form");
+        const addressInput = document.getElementById("address");
+        const outContainer = document.getElementById("out");
+        const getdataButton = document.getElementById("getdata");
+        const randcolorsButton = document.getElementById("randcolors");
+        const getsvgButton = document.getElementById("getsvg");
+        const togglesvgButton = document.getElementById("togglesvg");
+        const bboxElement = document.getElementById("bbox");
+        const numwaysElement = document.getElementById("numways");
+        const queryTimeElement = document.getElementById("querytime");
+        const svgTimeElement = document.getElementById("svgtime");
+        const legendElement = document.getElementById("legend");
+
+        // marker (may be set/visible or not at any given time)
+        let marker = null;
+
+        // update bbox output below (bbox function also reused for overpass api)
+        function bbox(bounds) {
+            // order is different from .toBBoxString()
+            return `${bounds.getSouthWest().lat},${bounds.getSouthWest().lng},${bounds.getNorthEast().lat},${bounds.getNorthEast().lng}`;
+        }
+        bboxElement.innerText = bbox(map.getBounds());  // initial value
+        map.on("moveend", () => {
+            bboxElement.innerText = bbox(map.getBounds());
+        });
+
+        // panic box
+        function panic(message, details) {
+            document.getElementById("panic-message").innerText = message;
+            document.getElementById("panic-details").innerText = details;
+            document.getElementById("panic").style.display = "block";
+        }
+        function unpanic() {
+            document.getElementById("panic").style.display = "";
+        }
+        document.getElementById("panic-dismiss").addEventListener("click", unpanic);
+
+        // footnote highlights (fading out is achieved by adding a transition time to all non-highlit footnotes)
+        function highlightFootnote(e) {
+            const footnoteId = e.target.getAttribute("href");
+            const footnoteElement = document.querySelector(footnoteId);
+            footnoteElement.classList.add("highlit");
+            setTimeout(() => {
+                footnoteElement.classList.remove("highlit");
+            }, 3000);
+        }
+        document.querySelectorAll('a[href^="#fn"]').forEach(e => e.addEventListener("click", highlightFootnote))
+
+        // search function
+        async function nominatim(e) {
+            e.preventDefault();
+
+            // reset the view a little
+            if (marker) {
+                map.removeLayer(marker);
+            }
+
+            const address = addressInput.value;
+
+            // allow state restoration: try parsing bbox
+            const bboxMatch = /^b?b?o?x?\s*\[?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\]?\s*$/.exec(address);
+            if (bboxMatch && bboxMatch.length == 5) {
+                map.fitBounds(L.latLngBounds(L.latLng(bboxMatch[1], bboxMatch[2]), L.latLng(bboxMatch[3], bboxMatch[4])));
+            } else {
+                let lat = null;
+                let lon = null;
+
+                // try lat, lon case
+                const latLonMatch = /^(\d+\.?\d*),\s?(\d+\.?\d*)\s*$/.exec(address);
+                if (latLonMatch && latLonMatch.length == 3) {
+                    lat = latLonMatch[1];
+                    lon = latLonMatch[2];
+                } else {
+
+                    // query nominatim
+                    const nominatimResult = await fetch(
+                        "https://nominatim.openstreetmap.org/search?format=jsonv2&q=" + encodeURIComponent(address)
+                    ).then(
+                        async data => data.json()
+                    ).catch(error => {
+                        panic("Error during address search:", error);
+                    });
+
+                    if (nominatimResult.length == 0) {
+                        addressInput.classList.add("error");
+                        return;
+                    }
+
+                    lat = nominatimResult[0].lat;
+                    lon = nominatimResult[0].lon;
+                }
+
+                const coords = new L.LatLng(lat, lon);
+                marker = new L.Marker(coords).addTo(map);
+                map.panTo(coords);
+            }
+
+            // remove old drawing only on success
+            clearSvg();
+            addressInput.classList.add("success");
+        }
+        form.addEventListener("submit", nominatim);
+        form.addEventListener("input", () => addressInput.classList.remove("success", "error"));
+
+        // highway data fetching & svg drawing
+        let highways = null;
+
+        function shuffled(unshuffled) {
+
+            // via https://stackoverflow.com/a/46545530
+            return unshuffled
+                .map(value => ({value, sort: Math.random()}))
+                .sort((a, b) => a.sort - b.sort)
+                .map(({value}) => value);
+        }
+
+        function clearSvg() {
+            outContainer.innerHTML = "";
+            outContainer.style.display = "";
+        }
+        function toggleSvg() {
+            if (outContainer.style.display == "none") {
+                outContainer.style.display = "";
+            } else {
+                outContainer.style.display = "none";
+            }
+        }
+        togglesvgButton.addEventListener("click", toggleSvg);
+
+        function drawSvg() {
+            if (!highways) {
+                return;
+            }
+
+            const svgStart = performance.now();
+
+            clearSvg();
+
+            // get list of highway types (dedup)
+            const types = [...new Set(highways.map(h => h.type))];
+
+            // establish random color mapping while populating legend
+            let legendContent = "";
+            const shuffledColors = shuffled(colors);
+            const colorFor = Object.assign({}, ...types.map((type, i) => {  // read as "color for type"
+                const color = shuffledColors[i % shuffledColors.length];
+                legendContent += `<span><s style="background-color: ${color}"></s> highway=${type}</span>`;
+                return {[type]: color};
+            }));
+            const colorsInUse = [...new Set(Object.values(colorFor))];
+            const typesFor = Object.assign({}, ...colorsInUse.map((color, i) => {  // "types for color", inverse mapping
+                const types = Object.entries(colorFor).filter(([type, colorForType]) => colorForType == color).map(([type, colorForType]) => type);
+                return {[color]: types};
+            }));
+            legendElement.innerHTML = legendContent;
+
+            // TODO idea: legend as styled checkboxes? could deselect unwanted highway types, hide those in svg, persist across osm data loads
+
+            // set up svg element
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            svg.style.strokeWidth = 0.33;
+            svg.style.fill = "none";
+            svg.setAttribute("width", "160mm");
+            svg.setAttribute("height", "100mm");
+            svg.style.width = "800px";
+            svg.style.height = "500px";
+            svg.setAttribute("viewBox", "0 0 160 100");
+            svg.setAttribute("xmlns:inkscape", "http://www.inkscape.org/namespaces/inkscape");
+            svg.setAttribute("xmlns", "http://www.w3.org/2000/svg");  // otherwise preview won't work
+
+            // layer "% Background" to make sure AxiDraw Inkscape extension doesn't try to draw it
+            // include attribution as required by osm, see https://osmfoundation.org/wiki/Licence/Attribution_Guidelines
+            svg.innerHTML = `<!-- generated by osm2svg4art, see https://ghpages.noahdoersing.com/osm2svg4art/ --><g inkscape:groupmode="layer" inkscape:label="% Background"><rect width="100%" height="100%" fill="transparent"/><text x="159" y="99" text-anchor="end" style="fill: black; opacity: 0.2; font-family: sans-serif; font-size: 0.4mm;">(C) OpenStreetMap, openstreetmap.org/copyright</text></g>`;
+
+            // initialize drawing: map of layer/color to list of paths
+            const drawing = {};
+            colorsInUse.forEach(c => drawing[c] = []);
+
+            const bounds = map.getBounds();
+            const minLat = bounds.getSouthWest().lat
+            const minLon = bounds.getSouthWest().lng;
+            const maxLat = bounds.getNorthEast().lat
+            const maxLon = bounds.getNorthEast().lng;
+
+            // convert paths (latitude-longitude data) into normalized x-y coordinates and sort into layer/color buckets
+            highways.forEach(h => {
+                const points = h.coords.map(([lat, lon]) => {
+                    const x = 160 * (lon - minLon) / (maxLon - minLon);
+                    const y = 100 - 100 * (lat - minLat) / (maxLat - minLat);
+                    return [x, y];
+                });
+
+                // since we're using leaflet, might as well use its line simplifying functionality
+                // via https://leafletjs.com/reference.html#lineutil
+                // also possible: clipSegment(point1, point2, bounds) to remove out-of-frame bits
+                const a = L.LineUtil.simplify(points.map(([x, y]) => L.point(x, y)), 0.1);
+                const simplified_points = a.map(p => `${p.x} ${p.y}`);
+
+                //drawing[colorFor[h.type]].push({id: h.id, points: xyPoints});  // would keep osm way ids in the mix
+                const path = "M " + simplified_points.join(" L ");
+                drawing[colorFor[h.type]].push(path);
+            });
+
+            Object.entries(drawing).forEach(([color, paths], i) => {
+                const eLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
+                eLayer.setAttribute("class", color);
+                eLayer.setAttribute("inkscape:groupmode", "layer");
+                eLayer.setAttribute("inkscape:label", `${i} ${color} (${typesFor[color]})`);
+                eLayer.setAttribute("inkscape:groupmode", `layer`);
+                eLayer.setAttribute("id", `layer${i}`);
+
+                paths.forEach(path => {
+                    const ePath = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                    ePath.setAttribute("d", path);
+                    ePath.setAttribute("stroke-linecap", "round");   // mimics pen
+                    ePath.setAttribute("stroke-linejoin", "round");  // ditto
+                    ePath.style.stroke = color;
+                    eLayer.appendChild(ePath);
+                });
+
+                svg.appendChild(eLayer);
+            });
+
+            outContainer.appendChild(svg);
+
+            const svgTime = performance.now() - svgStart;
+            svgTimeElement.innerText = Math.round(svgTime);
+
+        }
+        randcolorsButton.addEventListener("click", drawSvg);
+
+        async function doTheThing() {
+            const queryStart = performance.now();
+
+            clearSvg();
+
+            getdataButton.classList.add("loading");
+            [randcolorsButton, getsvgButton, togglesvgButton].forEach(e => e.classList.add("disabled"));
+
+            // via https://wiki.openstreetmap.org/wiki/Overpass_API#Quick_Start_(60_seconds):_for_Developers/Programmers
+            const result = await fetch(
+                "https://overpass-api.de/api/interpreter", {
+                    method: "POST",
+                    body: "data=" + encodeURIComponent(`
+                        [out:json][timeout:90];
+                        (way(${bbox(map.getBounds())})[highway];);
+                        out geom;
+                    `)
+                }
+            ).then(async data => {
+                const json = data.json();
+                [randcolorsButton, getsvgButton, togglesvgButton].forEach(e => e.classList.remove("disabled"));
+                return json;
+            }).catch(error => {
+                panic("Error during Overpass API call:", error);
+            }).finally(() => {
+                getdataButton.classList.remove("loading");
+            });
+
+            try {
+                const elements = result.elements;
+                highways = [];
+                elements.forEach(e => {
+                    const id = e.id;
+                    const type = e.tags.highway;
+                    const coords = e.geometry.map(geo => [geo.lat, geo.lon]);
+
+                    highways.push({id: id, type: type, coords: coords});
+                });
+            } catch (error) {
+                panic("Error during postprocessing of Overpass API response:", error);
+            }
+
+            numwaysElement.innerText = highways.length;
+
+            const queryTime = performance.now() - queryStart;
+            queryTimeElement.innerText = Math.round(queryTime);
+
+            // highways now updated in global state, can draw (call draw function separately)
+            drawSvg();
+        }
+        getdataButton.addEventListener("click", doTheThing);
+
+
+        // based on https://stackoverflow.com/a/16245768
+        function htmlToObjectURL(html) {
+            const sliceSize = 512;
+            const byteArrays = [];
+
+            for (let offset = 0; offset < html.length; offset += sliceSize) {
+                const slice = html.slice(offset, offset + sliceSize);
+
+                const byteNumbers = new Array(slice.length);
+                for (let i = 0; i < slice.length; i++) {
+                    byteNumbers[i] = slice.charCodeAt(i);
+                }
+
+                const byteArray = new Uint8Array(byteNumbers);
+                byteArrays.push(byteArray);
+            }
+
+            const blob = new Blob(byteArrays, {type: 'text/html'});
+            const url = URL.createObjectURL(blob)
+            return url;
+        }
+        function downloadFile(hrefData, filename) {
+            const a = document.createElement("a");
+            a.href = hrefData;
+            a.setAttribute("download", filename);
+            document.body.appendChild(a);
+            a.click();
+            a.outerHTML = "";
+        }
+        function download() {
+            const svgElement = outContainer.querySelector("svg");
+            if (!svgElement) {
+                return;
+            }
+            const filename = `ptpx2024_${bbox(map.getBounds())}_${new Date().toISOString().replace(/\:/g, ".")}`;
+            downloadFile(htmlToObjectURL(svgElement.outerHTML), filename + ".svg");
+        }
+        getsvgButton.addEventListener("click", download);
+    </script>
+</html>
