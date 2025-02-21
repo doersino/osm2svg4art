@@ -5,3 +5,5 @@ Retrieves roads and paths from [OpenStreetMap](https://www.openstreetmap.org/) v
 *Originally built for [#ptpx2024](https://mastodon.social/tags/ptpx2024), a pen plotter postcard exchange.*
 
 **Try it out: [https://ghpages.noahdoersing.com/osm2svg4art/](https://ghpages.noahdoersing.com/osm2svg4art/)**
+
+![](example.svg)
