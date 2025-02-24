@@ -218,8 +218,8 @@
     <main>
         <h1>osm2svg4art ∕ #ptpx2024 <a href="https://noahdoersing.com/" target="_blank">noahdoersing.com ↗</a></h1>
         <div id="panic"><div id="panic-dismiss">×</div><div id="panic-message"></div><div id="panic-details"></div><em>Try again. Or maybe the page's just gone wonky and you need to reload. (You can first copy the <code>bbox</code> displayed below the buttons and, after reloading, enter it into the search field to restore state.)</em></div>
-        <p>Retrieves roads and paths from <a href="https://www.openstreetmap.org/">OpenStreetMap</a> (<em>i.e.</em>, all ways with <code>highway=*</code><a href="#fn1">&alpha;</a>) via the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API">Overpass API</a>, then <a href="http://mourner.github.io/simplify-js/">simplifies</a> them ahead of conversion to an artsy color-coded SVG representation for plotting on an <a href="https://axidraw.com">AxiDraw</a>. Different colors end up on separate <a href="https://wiki.inkscape.org/wiki/DocumentLayers">Inkscape-style layers</a> in preparation for drawing with the <a href="https://wiki.evilmadscientist.com/Axidraw_Software_Installation">AxiDraw Inkscape extension</a>. <em>Originally built<a href="#fn2">&beta;</a> for <a href="https://mastodon.social/tags/ptpx2024">#ptpx2024</a>, a pen plotter postcard exchange.</em></p>
-        <p><strong>Instructions:</strong> ① Enter an address<a href="#fn3">&gamma;</a> or some coordinates, ② press <kbd title="enter">↵</kbd> to search, ③ zoom and pan to adjust<a href="#fn4">&delta;</a> the displayed area, then ④ operate the hopefully-self-explanatory buttons below (left to right if in doubt).</p>
+        <p>Retrieves roads and paths from <a href="https://www.openstreetmap.org/">OpenStreetMap</a> (<em>i.e.</em>, all ways with <code>highway=*</code><a href="#fn1">&alpha;</a>) via the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API">Overpass API</a>, then <a href="http://mourner.github.io/simplify-js/">simplifies</a> them ahead of conversion to an artsy color-coded SVG representation for plotting on an <a href="https://axidraw.com">AxiDraw</a>. Different colors end up on separate <a href="https://wiki.inkscape.org/wiki/DocumentLayers">Inkscape-style layers</a> in preparation for drawing<a href="#fn2">&beta;</a> with the <a href="https://wiki.evilmadscientist.com/Axidraw_Software_Installation">AxiDraw Inkscape extension</a>. <em>Originally built<a href="#fn3">&gamma;</a> for <a href="https://mastodon.social/tags/ptpx2024">#ptpx2024</a>, a pen plotter postcard exchange.</em></p>
+        <p><strong>Instructions:</strong> ① Enter an address<a href="#fn4">&delta;</a> or some coordinates, ② press <kbd title="enter">↵</kbd> to search, ③ zoom and pan to adjust<a href="#fn5">&epsilon;</a> the displayed area, then ④ operate the hopefully-self-explanatory buttons below (left to right if in doubt).</p>
         <form id="form">
             <input id="address" placeholder="address, or: latitude, longitude">
         </form>
@@ -239,14 +239,17 @@
             <span id="querytime">?</span> ms (query)
             ·
             <span id="svgtime">?</span> ms (drawing)
+            ·
+            ≤ <span id="drawdist">?</span> mm
             <div id="legend"><span><s style="background-color: grey"></s> highway=yes</span></div>
         </aside>
         <footer>
             <ol>
                 <li id="fn1">Meaning that notably, this tool excludes railways and waterways. Those are left as an exercise to the reader – the code's <a href="https://github.com/doersino/osm2svg4art">open source</a>. Or maybe I'll add some toggles or mode switches at a later date.</li>
-                <li id="fn2">"Hand-coded" in pure HTML, CSS, and JavaScript – with no preprocessor or framework of any kind. I love that that kind of lo-fi approach is still possible (and, quite frankly, thanks to JavaScript gaining a number of convenience features, more viable than ever!) in 2024.</li>
-                <li id="fn3"><em>Privacy notice:</em> Geocoding is performed through <a href="https://nominatim.openstreetmap.org/ui/search.html">OSM Nominatim</a> which is subject to the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>.<br>And while I'm at it, full disclosure (so you won't sue me on GDPR grounds – but rest assured that I'm way too asocial to <em>want</em> any of your personal info plus too lazy to try and <em>get</em> any of it): This site is hosted on <a href="https://pages.github.com">GitHub Pages</a> (here's <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's Privacy Policy</a>) and displays a map composed of <a href="https://tile.openstreetmap.de/">OSM Tiles</a> (see the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>) using <a href="https://leafletjs.com">Leaflet.js</a> loaded from <a href="https://www.unpkg.com">UNPKG</a> (which doesn't seem to have a privacy policy...?).</li>
-                <li id="fn4">Make sure the area doesn't contain more than a few thousand roads – things might get a bit sluggish when loading/rendering significantly more data.</li>
+                <li id="fn2">On 10 × 16 centimeter paper, which the "≤ ⋯ mm" drawing distance estimate below the buttons is based on. <em>Fun fact</em>: When querying OSM for ways in a given area, the Overpass API of course returns the full ways – including those portions outside the requested area. As a result, computing their aggregate length tends to yield a slight overestimate. (<a href="https://en.wikipedia.org/wiki/Cohen–Sutherland_algorithm">Line-to-bounding-box clipping algorithms</a> do exist, of course.)</li>
+                <li id="fn3">"Hand-coded" in pure HTML, CSS, and JavaScript – with no preprocessor or framework of any kind. I love that that kind of lo-fi approach is still possible (and, quite frankly, thanks to JavaScript gaining a number of convenience features, more viable than ever!) in 2024.</li>
+                <li id="fn4"><em>Privacy notice:</em> Geocoding is performed through <a href="https://nominatim.openstreetmap.org/ui/search.html">OSM Nominatim</a> which is subject to the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>.<br>And while I'm at it, full disclosure (so you won't sue me on GDPR grounds – but rest assured that I'm way too asocial to <em>want</em> any of your personal info plus too lazy to try and <em>get</em> any of it): This site is hosted on <a href="https://pages.github.com">GitHub Pages</a> (here's <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's Privacy Policy</a>) and displays a map composed of <a href="https://tile.openstreetmap.de/">OSM Tiles</a> (see the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>) using <a href="https://leafletjs.com">Leaflet.js</a> loaded from <a href="https://www.unpkg.com">UNPKG</a> (which doesn't seem to have a privacy policy...?).</li>
+                <li id="fn5">Make sure the area doesn't contain more than a few thousand roads – things might get a bit sluggish when loading/rendering significantly more data.</li>
             </ol>
         </footer>
     </main>
@@ -278,6 +281,7 @@
         const numwaysElement = document.getElementById("numways");
         const queryTimeElement = document.getElementById("querytime");
         const svgTimeElement = document.getElementById("svgtime");
+        const drawDistanceElement = document.getElementById("drawdist");
         const legendElement = document.getElementById("legend");
 
         // marker (may be set/visible or not at any given time)
@@ -407,13 +411,13 @@
 
             // get list of highway types (dedup)
             const types = [...new Set(highways.map(h => h.type))];
+            const shuffledTypes = shuffled(types);
 
-            // establish random color mapping while populating legend
+            // establish random color mapping
             let legendContent = "";
             const shuffledColors = shuffled(colors);
-            const colorFor = Object.assign({}, ...types.map((type, i) => {  // read as "color for type"
+            const colorFor = Object.assign({}, ...shuffledTypes.map((type, i) => {  // read as "color for type"
                 const color = shuffledColors[i % shuffledColors.length];
-                legendContent += `<span><s style="background-color: ${color}"></s> highway=${type}</span>`;
                 return {[type]: color};
             }));
             const colorsInUse = [...new Set(Object.values(colorFor))];
@@ -421,6 +425,12 @@
                 const types = Object.entries(colorFor).filter(([type, colorForType]) => colorForType == color).map(([type, colorForType]) => type);
                 return {[color]: types};
             }));
+
+            // populate legend: first sort by highway type for stability after shuffling
+            legendContent = Object.entries(colorFor)
+                .sort(([type1, color1], [type2, color2]) => type1 > type2)
+                .map(([type, color]) => `<span><s style="background-color: ${color}"></s> highway=${type}</span>`)
+                .join("");
             legendElement.innerHTML = legendContent;
 
             // TODO idea: legend as styled checkboxes? could deselect unwanted highway types, hide those in svg, persist across osm data loads
@@ -452,6 +462,7 @@
             const maxLon = bounds.getNorthEast().lng;
 
             // convert paths (latitude-longitude data) into normalized x-y coordinates and sort into layer/color buckets
+            let totalDistance = 0;
             highways.forEach(h => {
                 const points = h.coords.map(([lat, lon]) => {
                     const x = 160 * (lon - minLon) / (maxLon - minLon);
@@ -462,13 +473,20 @@
                 // since we're using leaflet, might as well use its line simplifying functionality
                 // via https://leafletjs.com/reference.html#lineutil
                 // also possible: clipSegment(point1, point2, bounds) to remove out-of-frame bits
-                const a = L.LineUtil.simplify(points.map(([x, y]) => L.point(x, y)), 0.1);
-                const simplified_points = a.map(p => `${p.x} ${p.y}`);
+                const leaflet_points = points.map(([x, y]) => L.point(x, y));
+                const leaflet_simplified_points = L.LineUtil.simplify(leaflet_points, 0.1);
+                const simplified_points = leaflet_simplified_points.map(p => [p.x, p.y]);
 
-                //drawing[colorFor[h.type]].push({id: h.id, points: xyPoints});  // would keep osm way ids in the mix
-                const path = "M " + simplified_points.join(" L ");
+                // add up distance: reduce array using euclidean distance formula with a data structure [distance_so_far, prev_point], at the end extract final value of distance_so_far
+                totalDistance += simplified_points.reduce(([d, [x1, y1]], [x2, y2]) => [d + Math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2), [x2, y2]], [0, simplified_points[0]])[0];
+
+                // construct svg path expression
+                const path = "M " + simplified_points.map(([x, y]) => `${x} ${y}`).join(" L ");
                 drawing[colorFor[h.type]].push(path);
+                //drawing[colorFor[h.type]].push({id: h.id, points: xyPoints});  // would keep osm way ids in the mix
             });
+
+            drawDistanceElement.innerText = Math.round(totalDistance);
 
             Object.entries(drawing).forEach(([color, paths], i) => {
                 const eLayer = document.createElementNS("http://www.w3.org/2000/svg", "g");
