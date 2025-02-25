@@ -115,6 +115,9 @@
             border-radius: 0.5em;
             overflow: hidden;
         }
+        .bbox {
+            font-family: "Arial Narrow", sans-serif;
+        }
         #out {
             position: absolute;
             pointer-events: none;
@@ -132,7 +135,7 @@
         button {
             -webkit-appearance: none;
             border: 0;
-            padding: 1em;
+            height: 3.5em;
             font: inherit;
             color: inherit;
             background-color: white;
@@ -165,13 +168,16 @@
                 background-color: #eee;
             }
         }
-        aside {
-            margin-top: 1rem;
+        button s {
+            display: block;
+            text-decoration: none;
             font-size: 0.67em;
-            font-family: monospace;
+            color: grey;
         }
         #legend {
-            margin-top: 1em;
+            margin-top: 2rem;
+            font-size: 0.67em;
+            font-family: monospace;
             columns: 5;
         }
         #legend span {
@@ -217,7 +223,7 @@
 <body>
     <main>
         <h1>osm2svg4art ∕ #ptpx2024 <a href="https://noahdoersing.com/" target="_blank">noahdoersing.com ↗</a></h1>
-        <div id="panic"><div id="panic-dismiss">×</div><div id="panic-message"></div><div id="panic-details"></div><em>Try again. Or maybe the page's just gone wonky and you need to reload. (You can first copy the <code>bbox</code> displayed below the buttons and, after reloading, enter it into the search field to restore state.)</em></div>
+        <div id="panic"><div id="panic-dismiss">×</div><div id="panic-message"></div><div id="panic-details"></div><em>Try again. Or maybe the page's just gone wonky and you need to reload. (You can first copy the <em>BBox</em> displayed in the bottom right corner of the map and, after reloading, enter it into the search field to restore state.)</em></div>
         <p>Retrieves roads and paths from <a href="https://www.openstreetmap.org/">OpenStreetMap</a> (<em>i.e.</em>, all ways with <code>highway=*</code><a href="#fn1">&alpha;</a>) via the <a href="https://wiki.openstreetmap.org/wiki/Overpass_API">Overpass API</a>, then <a href="http://mourner.github.io/simplify-js/">simplifies</a> them ahead of conversion to an artsy color-coded SVG representation for plotting on an <a href="https://axidraw.com">AxiDraw</a>. Different colors end up on separate <a href="https://wiki.inkscape.org/wiki/DocumentLayers">Inkscape-style layers</a> in preparation for drawing<a href="#fn2">&beta;</a> with the <a href="https://wiki.evilmadscientist.com/Axidraw_Software_Installation">AxiDraw Inkscape extension</a>. <em>Originally built<a href="#fn3">&gamma;</a> for <a href="https://mastodon.social/tags/ptpx2024">#ptpx2024</a>, a pen plotter postcard exchange.</em></p>
         <p><strong>Instructions:</strong> ① Enter an address<a href="#fn4">&delta;</a> or some coordinates, ② press <kbd title="enter">↵</kbd> to search, ③ zoom and pan to adjust<a href="#fn5">&epsilon;</a> the displayed area, then ④ operate the hopefully-self-explanatory buttons below (left to right if in doubt).</p>
         <form id="form">
@@ -226,27 +232,27 @@
         <section id="out"></section>
         <section id="map"></section>
         <section class="buttons">
-            <button id="getdata">Get OSM Data</button>
-            <button id="randcolors" class="disabled">Shuffle Colors</button>
-            <button id="getsvg" class="disabled">Download SVG</button>
-            <button id="togglesvg" class="disabled">Toggle SVG</button>
+            <button id="getdata">
+                Get OSM Data
+                <s><span id="querytime">?</span> + <span id="svgtime">?</span> ms</s>
+            </button>
+            <button id="randcolors" class="disabled">
+                Shuffle Colors
+            </button>
+            <button id="getsvg" class="disabled">
+                Download SVG
+                <s><span id="numways">?</span> paths · ≤ <span id="drawdist">?</span> mm</s></button>
+            <button id="togglesvg" class="disabled">
+                Toggle SVG
+            </button>
         </section>
-        <aside>
-            bbox [<span id="bbox">?</span>]
-            ·
-            <span id="numways">?</span> ways
-            ·
-            <span id="querytime">?</span> ms (query)
-            ·
-            <span id="svgtime">?</span> ms (drawing)
-            ·
-            ≤ <span id="drawdist">?</span> mm
-            <div id="legend"><span><s style="background-color: grey"></s> highway=yes</span></div>
+        <aside id="legend">
+            <span><s style="background-color: grey"></s> highway=yes</span>
         </aside>
         <footer>
             <ol>
                 <li id="fn1">Meaning that notably, this tool excludes railways and waterways. Those are left as an exercise to the reader – the code's <a href="https://github.com/doersino/osm2svg4art">open source</a>. Or maybe I'll add some toggles or mode switches at a later date.</li>
-                <li id="fn2">On 10 × 16 centimeter paper, which the "≤ ⋯ mm" drawing distance estimate below the buttons is based on. <em>Fun fact</em>: When querying OSM for ways in a given area, the Overpass API of course returns complete ways – including those portions outside the requested area. As a result, computing their aggregate length tends to yield a slight overestimate compared to what's actually visible, hence the "≤". (<a href="https://en.wikipedia.org/wiki/Cohen–Sutherland_algorithm">Line-to-bounding-box clipping algorithms</a> do exist, of course.)</li>
+                <li id="fn2">On 10 × 16 centimeter paper, which the "≤ ⋯ mm" drawing distance estimate inside the "Download SVG" button is based on. <em>Fun fact</em>: When querying OSM for ways in a given area, the Overpass API of course returns complete ways – including those portions outside the requested area. As a result, computing their aggregate length tends to yield a slight overestimate compared to what's actually visible, hence the "≤". (<a href="https://en.wikipedia.org/wiki/Cohen–Sutherland_algorithm">Line-to-bounding-box clipping algorithms</a> do exist, of course.)</li>
                 <li id="fn3">"Hand-coded" in pure HTML, CSS, and JavaScript – with no preprocessor or framework of any kind. I love that that kind of lo-fi approach is still possible (and, quite frankly, thanks to JavaScript gaining a number of convenience features, more viable than ever!) in 2024.</li>
                 <li id="fn4"><em>Privacy notice:</em> Geocoding is performed through <a href="https://nominatim.openstreetmap.org/ui/search.html">OSM Nominatim</a> which is subject to the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>.<br>And while I'm at it, full disclosure (so you won't sue me on GDPR grounds – but rest assured that I'm way too asocial to <em>want</em> any of your personal info plus too lazy to try and <em>get</em> any of it): This site is hosted on <a href="https://pages.github.com">GitHub Pages</a> (here's <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement">GitHub's Privacy Policy</a>) and displays a map composed of <a href="https://tile.openstreetmap.de/">OSM Tiles</a> (see the <a href="https://osmfoundation.org/wiki/Privacy_Policy">OSMF Privacy Policy</a>) using <a href="https://leafletjs.com">Leaflet.js</a> loaded from <a href="https://www.unpkg.com">UNPKG</a> (which doesn't seem to have a privacy policy...?).</li>
                 <li id="fn5">Make sure the area doesn't contain more than a few thousand roads – things might get a bit sluggish when loading/rendering significantly more data.</li>
@@ -261,7 +267,7 @@
 
         // load map
         const osmUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-        const osmAttrib = "&copy; <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a>";
+        const osmAttrib = "&copy; <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a> | <span class=\"bbox\">BBox <span id=\"bbox\"></span></span>";
         const map = L.map("map", {zoomSnap: 0.2});  // enable fractional zoom, see https://leafletjs.com/examples/zoom-levels/
         L.tileLayer(osmUrl, {maxZoom: 19, attribution: osmAttrib}).addTo(map);
         L.control.scale().addTo(map);
@@ -290,7 +296,7 @@
         // update bbox output below (bbox function also reused for overpass api)
         function bbox(bounds) {
             // order is different from .toBBoxString()
-            return `${bounds.getSouthWest().lat},${bounds.getSouthWest().lng},${bounds.getNorthEast().lat},${bounds.getNorthEast().lng}`;
+            return `${bounds.getSouthWest().lat.toFixed(5)},${bounds.getSouthWest().lng.toFixed(5)},${bounds.getNorthEast().lat.toFixed(5)},${bounds.getNorthEast().lng.toFixed(5)}`;
         }
         bboxElement.innerText = bbox(map.getBounds());  // initial value
         map.on("moveend", () => {
@@ -331,7 +337,7 @@
             const address = addressInput.value;
 
             // allow state restoration: try parsing bbox
-            const bboxMatch = /^b?b?o?x?\s*\[?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\]?\s*$/.exec(address);
+            const bboxMatch = /^[Bb]?[Bb]?[Oo]?[Xx]?\s*\[?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\]?\s*$/.exec(address);
             if (bboxMatch && bboxMatch.length == 5) {
                 map.fitBounds(L.latLngBounds(L.latLng(bboxMatch[1], bboxMatch[2]), L.latLng(bboxMatch[3], bboxMatch[4])));
             } else {
