@@ -107,6 +107,21 @@
         }
         input.error, input.error:focus {
             outline-color: #ff6633;
+            animation: shake 0.25s;
+        }
+        @keyframes shake {
+            0% {
+                transform: translateX(0);
+            }
+            25% {
+                transform: translateX(1em);
+            }
+            75% {
+                transform: translateX(-1em);
+            }
+            100% {
+                transform: translateX(0);
+            }
         }
         #map, #out {
             width: 800px;
