@@ -115,8 +115,13 @@
             border-radius: 0.5em;
             overflow: hidden;
         }
-        .bbox {
-            font-family: "Arial Narrow", sans-serif;
+        .leaflet-control-attribution {
+            font-family: system-ui, sans-serif;
+            font-size: 0.67rem;
+            font-variant-numeric: tabular-nums;
+        }
+        abbr {
+            border-bottom: 1px dotted;
         }
         #out {
             position: absolute;
@@ -267,7 +272,7 @@
 
         // load map
         const osmUrl = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
-        const osmAttrib = "&copy; <a href=\"http://www.openstreetmap.org/copyright\">OpenStreetMap</a> | <span class=\"bbox\">BBox <span id=\"bbox\"></span></span>";
+        const osmAttrib = `&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> | <abbr title="Bounding box – you can note it down, then later paste it into the search field to return to this location.">BBox</abbr> <span id="bbox"></span> <a id="openinosm" target="_blank" title="Go to location on the OpenStreetMap website...">↗</a>`;
         const map = L.map("map", {zoomSnap: 0.2});  // enable fractional zoom, see https://leafletjs.com/examples/zoom-levels/
         L.tileLayer(osmUrl, {maxZoom: 19, attribution: osmAttrib}).addTo(map);
         L.control.scale().addTo(map);
@@ -284,6 +289,7 @@
         const getsvgButton = document.getElementById("getsvg");
         const togglesvgButton = document.getElementById("togglesvg");
         const bboxElement = document.getElementById("bbox");
+        const openinosmElement = document.getElementById("openinosm");
         const numwaysElement = document.getElementById("numways");
         const queryTimeElement = document.getElementById("querytime");
         const svgTimeElement = document.getElementById("svgtime");
@@ -298,10 +304,13 @@
             // order is different from .toBBoxString()
             return `${bounds.getSouthWest().lat.toFixed(5)},${bounds.getSouthWest().lng.toFixed(5)},${bounds.getNorthEast().lat.toFixed(5)},${bounds.getNorthEast().lng.toFixed(5)}`;
         }
-        bboxElement.innerText = bbox(map.getBounds());  // initial value
-        map.on("moveend", () => {
+
+        function afterMapMove() {
             bboxElement.innerText = bbox(map.getBounds());
-        });
+            openinosmElement.setAttribute("href", `https://www.openstreetmap.org/#map=${Math.ceil(map.getZoom())}/${map.getCenter().lat}/${map.getCenter().lng}`);
+        }
+        map.on("moveend", afterMapMove);
+        afterMapMove();  // initial value
 
         // panic box
         function panic(message, details) {
@@ -337,7 +346,7 @@
             const address = addressInput.value;
 
             // allow state restoration: try parsing bbox
-            const bboxMatch = /^[Bb]?[Bb]?[Oo]?[Xx]?\s*\[?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\]?\s*$/.exec(address);
+            const bboxMatch = /^[Bb]?[Bb]?[Oo]?[Xx]?\s*\[?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*),\s?(\d+\.?\d*)\]?.*$/.exec(address);
             if (bboxMatch && bboxMatch.length == 5) {
                 map.fitBounds(L.latLngBounds(L.latLng(bboxMatch[1], bboxMatch[2]), L.latLng(bboxMatch[3], bboxMatch[4])));
             } else {
